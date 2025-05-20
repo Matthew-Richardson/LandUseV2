@@ -25,7 +25,6 @@ excel_path = r"T:\County Departments\Planning_Dept\District_Plans\LandUse_Master
 excel_sheet = 0  # Default to first sheet
 parcel_layer_name = "Subject Parcel"
 district_outline_name = "Planning District Outline"
-map_pro_group = "Map_Pro"
 
 # Mapping PLANNAME to land use layer name in Map_Pro
 district_to_layer = {
@@ -43,6 +42,17 @@ district_to_layer = {
     "West Durango": "West Durango"
 }
 
+# --- Helper Function to Find Nested Layers ---
+def find_layer_recursively(map_obj, layer_name):
+    for lyr in map_obj.listLayers():
+        if lyr.name == layer_name:
+            return lyr
+        elif lyr.isGroupLayer:
+            for sub_lyr in lyr.listLayers():
+                if sub_lyr.name == layer_name:
+                    return sub_lyr
+    return None
+
 # --- Load Excel Data ---
 df = pd.read_excel(excel_path, sheet_name=excel_sheet)
 
@@ -52,11 +62,13 @@ map_obj = project.listMaps()[0]  # Assumes single map
 
 # --- Get layers ---
 parcel_layer = map_obj.listLayers(parcel_layer_name)[0]
-district_layer = [lyr for lyr in map_obj.listLayers(district_outline_name) if lyr.isFeatureLayer][0]
+district_layer = find_layer_recursively(map_obj, district_outline_name)
+if district_layer is None:
+    raise Exception(f"Could not find planning district layer '{district_outline_name}'.")
 
 # --- Step 1: Definition query and zoom ---
-parcel_layer.definitionQuery = f"ParcelNumber = '{parcel_number}'"
-with arcpy.da.SearchCursor(parcel_layer, ["SHAPE@", "ParcelNumber"]) as cursor:
+parcel_layer.definitionQuery = f"APN = '{parcel_number}'"
+with arcpy.da.SearchCursor(parcel_layer, ["SHAPE@", "APN"]) as cursor:
     parcel_geom = next(cursor)[0]
 parcel_extent = parcel_geom.extent
 
@@ -72,7 +84,10 @@ if not planning_district:
 
 # --- Step 3: Identify land use designation ---
 land_use_layer_name = district_to_layer.get(planning_district)
-land_use_layer = map_obj.listLayers(land_use_layer_name)[0]
+land_use_layer = find_layer_recursively(map_obj, land_use_layer_name)
+if land_use_layer is None:
+    raise Exception(f"Could not find land use layer '{land_use_layer_name}' for district '{planning_district}'.")
+
 land_use_value = None
 with arcpy.da.SearchCursor(land_use_layer, ["SHAPE@", "LUC_TEXT"]) as cursor:
     for row in cursor:
