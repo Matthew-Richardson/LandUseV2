@@ -22,7 +22,7 @@ parcel_number = arcpy.GetParameterAsText(0)
 output_folder = arcpy.GetParameterAsText(1)
 
 # --- Constants ---
-excel_path = r"C:\Path\To\PlanningInfo.xlsx"  # <-- Update this path
+excel_path = r""T:\County Departments\Planning_Dept\District_Plans\LandUse_Master.xlsx""  # <-- Update this path
 excel_sheet = 0  # Default to first sheet
 parcel_layer_name = "Subject Parcel"
 district_outline_name = "Planning District Outline"
