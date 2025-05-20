@@ -15,14 +15,13 @@ import arcpy
 import os
 import pandas as pd
 from arcpy import env
-from arcpy import geometry as geo
 
 # --- User Inputs ---
 parcel_number = arcpy.GetParameterAsText(0)
 output_folder = arcpy.GetParameterAsText(1)
 
 # --- Constants ---
-excel_path = r"T:\County Departments\Planning_Dept\District_Plans\LandUse_Master.xlsx"  # <-- Update this path
+excel_path = r"T:\County Departments\Planning_Dept\District_Plans\LandUse_Master.xlsx"
 excel_sheet = 0  # Default to first sheet
 parcel_layer_name = "Subject Parcel"
 district_outline_name = "Planning District Outline"
@@ -88,7 +87,7 @@ directions = {"North": (0, 50), "East": (50, 0), "South": (0, -50), "West": (-50
 directional_land_use = {}
 centroid = parcel_geom.centroid
 for dir, (dx, dy) in directions.items():
-    probe = geo.PointGeometry(geo.Point(centroid.centroid.X + dx, centroid.centroid.Y + dy), parcel_geom.spatialReference)
+    probe = arcpy.PointGeometry(arcpy.Point(centroid.X + dx, centroid.Y + dy), parcel_geom.spatialReference)
     with arcpy.da.SearchCursor(land_use_layer, ["SHAPE@", "LUC_TEXT"]) as cursor:
         for row in cursor:
             if row[0].contains(probe):
